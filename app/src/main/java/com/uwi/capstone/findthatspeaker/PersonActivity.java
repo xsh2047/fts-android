@@ -1,5 +1,6 @@
 package com.uwi.capstone.findthatspeaker;
 
+import android.app.ProgressDialog;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -10,12 +11,14 @@ import android.os.Handler;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.webkit.WebView;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -48,6 +51,8 @@ public class PersonActivity extends AppCompatActivity {
     ImageView img;
     TextView title, desc;
     ScrollView descScroll;
+    CardView proPic;
+    ProgressBar pd;
 
     private RequestQueue rQueue;
     private StringRequest request;
@@ -61,19 +66,13 @@ public class PersonActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         img = (ImageView) findViewById(R.id.imageView);
-//        final Matrix matrix = img.getImageMatrix();
-//        final float imageWidth = img.getDrawable().getIntrinsicWidth();
-//        final int screenWidth = 500;
-//        final float scaleRatio = screenWidth / imageWidth;
-//        matrix.postScale(scaleRatio, scaleRatio);
-//        img.setImageMatrix(matrix);
-//
-//        Toast.makeText(this, String.valueOf(scaleRatio), Toast.LENGTH_LONG).show();
-
         title = (TextView) findViewById(R.id.titleText);
         desc = (TextView) findViewById(R.id.descText);
         descScroll = (ScrollView) findViewById(R.id.descScroll);
+        proPic = (CardView) findViewById(R.id.proPicView);
+        pd = (ProgressBar) findViewById(R.id.progressBar);
 
+        //Allows for scrolling.
         descScroll.getViewTreeObserver().addOnScrollChangedListener(new ViewTreeObserver.OnScrollChangedListener() {
             @Override
             public void onScrollChanged() {
@@ -91,9 +90,19 @@ public class PersonActivity extends AppCompatActivity {
             }
         });
 
-        final String person = getIntent().getStringExtra("com.uwi.capstone.PERSON");
-        //desc.setMovementMethod(new ScrollingMovementMethod());
-        Log.i(LOG_TAG_EX, person);
+//        final String person = getIntent().getStringExtra("com.uwi.capstone.PERSON");
+        //Log.i(LOG_TAG_EX, person);
+
+        final String userData = getIntent().getStringExtra("com.uwi.capstone.USERDATA");
+        Log.i(LOG_TAG_EX, userData);
+        String[] data = userData.split("\\|");
+        final String name = data[0];
+        String description = data[1];
+
+        new JsonTask().execute(data[2]);
+
+        title.setText(name);
+        desc.setText(description);
 
         fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -101,11 +110,12 @@ public class PersonActivity extends AppCompatActivity {
             public void onClick(View v) {
                 WebView webview = new WebView(getApplicationContext());
                 setContentView(webview);
-                webview.loadUrl(MAINPAGE + person);
+                //webview.loadUrl(MAINPAGE + person);
+                webview.loadUrl(MAINPAGE + name);
             }
         });
 
-        getWikiData(APIIMAGEQUERY + person, APIINFOQUERY + person);
+        //getWikiData(APIIMAGEQUERY + person, APIINFOQUERY + person);
     }
 
     public void getWikiData(String imgQuery, String contentQuery){
@@ -174,11 +184,7 @@ public class PersonActivity extends AppCompatActivity {
 
         protected void onPreExecute() {
             super.onPreExecute();
-
-//            pd = new ProgressDialog(MainActivity.this);
-//            pd.setMessage("Please wait");
-//            pd.setCancelable(false);
-//            pd.show();
+            pd.setIndeterminate(true);
         }
 
         protected Bitmap doInBackground(String... params) {
@@ -189,10 +195,11 @@ public class PersonActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Bitmap result) {
             super.onPostExecute(result);
-//            if (pd.isShowing()){
-//                pd.dismiss();
-//            }
-//            txtJson.setText(result);
+            pd.setVisibility(View.GONE);
+            title.setVisibility(View.VISIBLE);
+            desc.setVisibility(View.VISIBLE);
+            descScroll.setVisibility(View.VISIBLE);
+            proPic.setVisibility(View.VISIBLE);
             if(result != null ){
                 img.setImageBitmap(result);
             }else{
@@ -203,7 +210,7 @@ public class PersonActivity extends AppCompatActivity {
             }
         }
 
-        public Bitmap getBitmap(String url){
+        Bitmap getBitmap(String url){
             try {
                 Log.e("src",url);
                 URL src = new URL(url);

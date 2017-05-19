@@ -47,12 +47,14 @@ public class MainActivity extends AppCompatActivity {
     private static final String LOG_TAG_R = "Rec_Log";
     private static final String LOG_TAG_W = "Rec_Log";
     public static final String EXTRA_PERSON = "com.uwi.capstone.PERSON";
+    public static final String EXTRA_USERDATA = "com.uwi.capstone.USERDATA";
 
     ImageButton recordBtn;
     WavAudioRecorder rec;
     TextView recordLabel;
     MediaRecorder mRecorder;
     String file;
+    int samplingRate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,15 +93,17 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         stop(0);
-                        queryFFT("172.16.189.44", 10001);
+                        queryServer("172.16.189.172", 20001);
                     }
                 }, 5000);
             }
         });
     }
 
+    //Records WAV file with a custom recorder that utilizes AudioRecord
     private void startRecordWav(){
         rec = WavAudioRecorder.getInstanse();
+        samplingRate = rec.getSamplingRate();
         rec.setOutputFile(file);
         try{
             rec.prepare();
@@ -109,23 +113,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         rec.start();
-    }
-    private void startRecording(){
-        mRecorder = new MediaRecorder();
-        mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        mRecorder.setOutputFile(file);
-        mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-        Log.i(LOG_TAG_R, "Recording");
-
-        try{
-            mRecorder.prepare();
-        }catch (IOException e){
-            Log.e(LOG_TAG_R, "prepare() failed");
-            System.out.println(e);
-        }
-
-        mRecorder.start();
     }
 
     private void stop(int toggle){
@@ -145,19 +132,22 @@ public class MainActivity extends AppCompatActivity {
         recordLabel.setText("Tap to Listen");
     }
 
-    private void queryFFT(final String url, final int port){
+    private void queryServer(final String url, final int port){
         Log.i(LOG_TAG_W, "Connecting...");
 
+        //Thread used to communicate to Server via Sockets.
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 String filePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS; //Change to Internal Storage
                 filePath += "/rec.wav";
-                int found = 0; //Initialize to 0
+                int found = 0;  //Initialize to 0
                 Socket sock;
                 String response = "";
                 try {
                     /*
+                    Code that could be used for accessing the server as a hosted web service.
+
                     HttpClient httpclient = new DefaultHttpClient();
 
                     HttpPost httppost = new HttpPost(url);
@@ -169,54 +159,70 @@ public class MainActivity extends AppCompatActivity {
                     httppost.setEntity(reqEntity);
                     HttpResponse response = httpclient.execute(httppost); */
 
-                    //Set found if found
+                    //Set socket if found
                     sock = new Socket(url, port);
                     Log.i(LOG_TAG_W, "Connected");
 
-                    // sendfile
+                    // Initializes components for sending audio file.
                     File myFile = new File(filePath);
                     byte[] mybytearray = new byte[(int) myFile.length()];
                     FileInputStream fis = new FileInputStream(myFile);
                     BufferedInputStream bis = new BufferedInputStream(fis);
                     bis.read(mybytearray, 0, mybytearray.length);
                     OutputStream os = sock.getOutputStream();
-                    Log.i(LOG_TAG_W, "Sending...");
-                    os.write(mybytearray, 0, mybytearray.length);
-                    //os.write(("Hello").getBytes());
-                    os.flush();
 
-                    Log.i(LOG_TAG_W, "Listening....");
                     InputStream is = sock.getInputStream();
                     InputStreamReader isr = new InputStreamReader(is);
                     BufferedReader br = new BufferedReader(isr);
-                    response = br.readLine();
 
+                    while (true){
+                        if(br.ready()){
+                            response = br.readLine();
+                            break;
+                        }
+                    }
+
+                    Log.i(LOG_TAG_W, "Sending File with size: " + mybytearray.length + " ...");
+                    os.write(mybytearray, 0, mybytearray.length);
+                    os.write(("Done").getBytes());
+                    os.flush();
+
+                    Log.i(LOG_TAG_W, "Listening....");
+                    while (true){
+                        if(br.ready()){
+                            response = br.readLine();
+                            break;
+                        }
+                    }
+
+                    Log.i(LOG_TAG_W, "Message received from the server : " + response); //Log the result from the request
                     found = 1;
 
                     sock.close();
-
-                    Log.i(LOG_TAG_W, "Message received from the server : " + response); //Log the result from the request
                 } catch (Exception e) {
                     // show error
                     Log.e(LOG_TAG_W, e.toString());
                 }
 
-                //Remove Hardcoded Person
-                String person = null;
+                /*String person = "";
                 try {
-                    //person = URLEncoder.encode("Beyoncé", "UTF-8");
                     person = URLEncoder.encode(response, "UTF-8");
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
-                }
+                }*/
 
                 if (found == 1) {
-                    //start other activity
+                    //Start Activity to Display person if found.
                     Intent intent = new Intent(getApplicationContext(), PersonActivity.class);
-                    intent.putExtra(EXTRA_PERSON, person);
+                    //intent.putExtra(EXTRA_PERSON, person);
+                    intent.putExtra(EXTRA_USERDATA, response);
                     startActivity(intent);
                 } else {
-                    recordLabel.setText("Unable to identify person. Try again.");
+                    recordLabel.post(new Runnable() {
+                        public void run() {
+                            recordLabel.setText("Unable to identify person. Try again.");
+                        }
+                    });
                 }
             }
         });

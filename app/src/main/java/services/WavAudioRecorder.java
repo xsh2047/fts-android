@@ -167,7 +167,7 @@ public class WavAudioRecorder {
     /**
      * Sets output file path, call directly after construction/reset.
      *
-     * @param output file path
+     * @param argPath file path
      *
      */
     public void setOutputFile(String argPath) {
@@ -334,5 +334,9 @@ public class WavAudioRecorder {
             Log.e(WavAudioRecorder.class.getName(), "stop() called on illegal state");
             state = State.ERROR;
         }
+    }
+
+    public int getSamplingRate(){
+        return this.sRate;
     }
 }
