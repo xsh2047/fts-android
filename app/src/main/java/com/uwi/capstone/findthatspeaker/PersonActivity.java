@@ -44,8 +44,8 @@ public class PersonActivity extends AppCompatActivity {
     private static final String LOG_TAG_EX = "Extra";
 
     private final String MAINPAGE = "https://en.wikipedia.org/wiki/";
-    private final String APIINFOQUERY = "https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro=&explaintext=&titles=";
-    private final String APIIMAGEQUERY = "https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&format=json&piprop=original&titles=";
+    //private final String APIINFOQUERY = "https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro=&explaintext=&titles=";
+    //private final String APIIMAGEQUERY = "https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&format=json&piprop=original&titles=";
 
     FloatingActionButton fab;
     ImageView img;
@@ -53,10 +53,6 @@ public class PersonActivity extends AppCompatActivity {
     ScrollView descScroll;
     CardView proPic;
     ProgressBar pd;
-
-    private RequestQueue rQueue;
-    private StringRequest request;
-
 
 
     @Override
@@ -90,7 +86,7 @@ public class PersonActivity extends AppCompatActivity {
             }
         });
 
-//        final String person = getIntent().getStringExtra("com.uwi.capstone.PERSON");
+//      final String person = getIntent().getStringExtra("com.uwi.capstone.PERSON");
         //Log.i(LOG_TAG_EX, person);
 
         final String userData = getIntent().getStringExtra("com.uwi.capstone.USERDATA");
@@ -119,19 +115,19 @@ public class PersonActivity extends AppCompatActivity {
     }
 
     public void getWikiData(String imgQuery, String contentQuery){
-        rQueue = Volley.newRequestQueue(this);
-        request = new StringRequest(Request.Method.GET, imgQuery, new Response.Listener<String>() {
+        RequestQueue rQueue = Volley.newRequestQueue(this);
+        StringRequest request = new StringRequest(Request.Method.GET, imgQuery, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
-                if(response != null) {
-                    try{
+                if (response != null) {
+                    try {
                         JSONObject json = new JSONObject(response);
                         JSONObject imgObj = json.getJSONObject("query").getJSONObject("pages");
                         Iterator<String> keySet = imgObj.keys();
                         String imgUrl = imgObj.getJSONObject(keySet.next()).getJSONObject("thumbnail").getString("original");
                         Log.i(LOG_TAG, imgUrl);
                         new JsonTask().execute(imgUrl);
-                    }catch (Exception err){
+                    } catch (Exception err) {
                         Log.e(LOG_TAG, "" + err);
                     }
                 }
@@ -139,7 +135,7 @@ public class PersonActivity extends AppCompatActivity {
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                    Log.e(LOG_TAG, error.toString());
+                Log.e(LOG_TAG, error.toString());
             }
         });
         rQueue.add(request);
@@ -168,13 +164,13 @@ public class PersonActivity extends AppCompatActivity {
 
     public void setContentFromJSON(String stringTitle, String stringDesc) {
         if(stringTitle.isEmpty() || stringTitle.equals("")) {
-            title.setText("Unknown");
+            title.setText(R.string.unknown);
         }else{
             title.setText(stringTitle);
         }
 
         if(stringDesc.isEmpty() || stringDesc.equals("")) {
-            desc.setText("Information not found.");
+            desc.setText(R.string.notFound);
         }else{
             desc.setText(stringDesc);
         }
@@ -188,8 +184,7 @@ public class PersonActivity extends AppCompatActivity {
         }
 
         protected Bitmap doInBackground(String... params) {
-            Bitmap image = getBitmap(params[0]);
-            return image;
+            return getBitmap(params[0]);
         }
 
         @Override

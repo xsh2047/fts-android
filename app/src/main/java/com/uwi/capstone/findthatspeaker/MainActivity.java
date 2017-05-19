@@ -80,6 +80,9 @@ public class MainActivity extends AppCompatActivity {
             );
         }
 
+        final String ip = getIntent().getStringExtra("com.uwi.capstone.IP");
+        final int port = getIntent().getIntExtra("com.uwi.capstone.PORT", 20001);
+
         file = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS; //Change to Internal Storage
         file += "/rec.wav";
         recordLabel = (TextView) findViewById(R.id.recordLabel);
@@ -94,7 +97,8 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         stop(0);
-                        queryServer("172.16.189.172", 20001);
+                        //queryServer("172.16.189.172", 20001);
+                        queryServer(ip, port);
                     }
                 }, 10000);
             }
@@ -227,7 +231,7 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     recordLabel.post(new Runnable() {
                         public void run() {
-                            recordLabel.setText("Unable to identify person. Try again.");
+                            recordLabel.setText("Unable to Identify. Try again.");
                         }
                     });
                 }

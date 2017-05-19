@@ -1,6 +1,7 @@
 <resources>
-    <string name="app_name">FindThatSpeaker</string>
-    <string name="title_activity_person">PersonActivity</string>
+    <string name="app_name">FST</string>
+    <string name="title_activity_person">Biography</string>
     <string name="unknown">Unknown</string>
     <string name="unknownDesc">\?\?\?</string>
+    <string name="notFound">Information not found.</string>
 </resources>

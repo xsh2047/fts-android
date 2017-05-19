@@ -26,7 +26,6 @@ public class WavAudioRecorder {
                     AudioFormat.ENCODING_PCM_16BIT);
         } while((++i<sampleRates.length) & !(result.getState() == WavAudioRecorder.State.INITIALIZING));
         return result;
-        //return new WavAudioRecorder(AudioSource.MIC, 48000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
     }
 
     /**
