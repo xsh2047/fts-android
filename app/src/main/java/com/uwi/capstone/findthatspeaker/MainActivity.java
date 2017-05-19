@@ -1,6 +1,7 @@
 package com.uwi.capstone.findthatspeaker;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioFormat;
@@ -46,7 +47,6 @@ import services.WavAudioRecorder;
 public class MainActivity extends AppCompatActivity {
     private static final String LOG_TAG_R = "Rec_Log";
     private static final String LOG_TAG_W = "Rec_Log";
-    public static final String EXTRA_PERSON = "com.uwi.capstone.PERSON";
     public static final String EXTRA_USERDATA = "com.uwi.capstone.USERDATA";
 
     ImageButton recordBtn;
@@ -55,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
     MediaRecorder mRecorder;
     String file;
     int samplingRate;
+    public ProgressDialog loadingdialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
                         stop(0);
                         queryServer("172.16.189.172", 20001);
                     }
-                }, 5000);
+                }, 10000);
             }
         });
     }
@@ -133,6 +134,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void queryServer(final String url, final int port){
+        loadingdialog = ProgressDialog.show(MainActivity.this,
+                "Please Wait","Finding Celebrity...",true);
         Log.i(LOG_TAG_W, "Connecting...");
 
         //Thread used to communicate to Server via Sockets.
@@ -188,22 +191,27 @@ public class MainActivity extends AppCompatActivity {
                     os.flush();
 
                     Log.i(LOG_TAG_W, "Listening....");
+                    String line;
+                    response = "";
                     while (true){
                         if(br.ready()){
-                            response = br.readLine();
+                            while((line = br.readLine()) != null){
+                                response += line;
+                            }
                             break;
                         }
                     }
 
                     Log.i(LOG_TAG_W, "Message received from the server : " + response); //Log the result from the request
-                    found = 1;
 
                     sock.close();
+                    found = 1;
                 } catch (Exception e) {
                     // show error
                     Log.e(LOG_TAG_W, e.toString());
                 }
 
+                //Used for Wikipedia's API
                 /*String person = "";
                 try {
                     person = URLEncoder.encode(response, "UTF-8");
@@ -214,7 +222,6 @@ public class MainActivity extends AppCompatActivity {
                 if (found == 1) {
                     //Start Activity to Display person if found.
                     Intent intent = new Intent(getApplicationContext(), PersonActivity.class);
-                    //intent.putExtra(EXTRA_PERSON, person);
                     intent.putExtra(EXTRA_USERDATA, response);
                     startActivity(intent);
                 } else {
@@ -224,6 +231,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                     });
                 }
+                loadingdialog.dismiss();
             }
         });
 
